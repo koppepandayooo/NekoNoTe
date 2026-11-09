@@ -39,10 +39,14 @@ Name: "desktopicon"; Description: "デスクトップにショートカットを
 [Files]
 Source: "..\dist\NekoNoTe.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\dist\Resources\Sounds\*.wav"; DestDir: "{app}\Resources\Sounds"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\NekoNoTe"; Filename: "{app}\NekoNoTe.exe"
 Name: "{userdesktop}\NekoNoTe"; Filename: "{app}\NekoNoTe.exe"; Tasks: desktopicon
+
+[Registry]
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueName: "NekoNoTe"; Flags: dontcreatekey uninsdeletevalue
 
 [Run]
 Filename: "{app}\NekoNoTe.exe"; Description: "NekoNoTe を起動する"; Flags: postinstall nowait

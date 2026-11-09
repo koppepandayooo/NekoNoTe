@@ -12,17 +12,55 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
     private (ToggleButton Button, FrameworkElement Panel)[] Pages =>
         new (ToggleButton, FrameworkElement)[]
         {
+            (EarthquakeNavButton, EarthquakePanel),
             (RobloxNavButton, RobloxPanel),
             (UpdateNavButton, UpdatePanel),
+            (SettingsNavButton, SettingsPanel),
         };
 
-    public MainWindow()
+    public MainWindow(NekoNoTe.Services.AlertHistoryStore history)
     {
         InitializeComponent();
+        // 画面が小さい PC では、はみ出さない大きさにする
+        var scale = Math.Min(1, Math.Min(SystemParameters.WorkArea.Width * 0.94 / Width, SystemParameters.WorkArea.Height * 0.90 / Height));
+        Width = Math.Max(MinWidth, Width * scale);
+        Height = Math.Max(MinHeight, Height * scale);
+        EarthquakePanel.Attach(history);
         _activePanel = RobloxPanel;
         UpdatePanel.UpdateAvailableChanged += available =>
             UpdateNavActivity.Visibility = available ? Visibility.Visible : Visibility.Collapsed;
-        Loaded += async (_, _) => await UpdatePanel.CheckSilentlyAsync();
+        Loaded += async (_, _) =>
+        {
+            if (NekoNoTe.Settings.AppSettings.Current.CheckUpdatesOnStartup) await UpdatePanel.CheckSilentlyAsync();
+        };
+    }
+
+    protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+    {
+        base.OnClosing(e);
+        var app = (App)System.Windows.Application.Current;
+        if (app.IsExiting) return;
+        if (NekoNoTe.Settings.AppSettings.Current.CloseToTray)
+        {
+            e.Cancel = true;   // 閉じてもトレイに残って、地震の通知を受ける
+            Hide();
+        }
+        else app.ExitApplication();
+    }
+
+    public void SetQuakeStatus(bool connected, string text)
+    {
+        var brush = (System.Windows.Media.Brush)FindResource(connected ? "AccentBrush" : "TextSecondaryBrush");
+        EarthquakeNavDot.Fill = brush;
+        EarthquakeNavText.Foreground = brush;
+        EarthquakeNavText.Text = text;
+    }
+
+    /// <summary>地震が起きた時、画面が出ていれば地震タブを開いて最新の情報を選ぶ</summary>
+    public void ShowRealtimeAlert(NekoNoTe.Models.AlertInfo alert)
+    {
+        EarthquakePanel.SelectAlert(alert);
+        if (IsVisible) NavButton_Click(EarthquakeNavButton, new RoutedEventArgs());
     }
 
     private void NavButton_Click(object sender, RoutedEventArgs e)

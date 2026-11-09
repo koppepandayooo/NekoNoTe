@@ -4,7 +4,7 @@
              xmlns:local="clr-namespace:NekoNoTe"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:behaviors="clr-namespace:NekoNoTe.Behaviors"
-             ShutdownMode="OnMainWindowClose">
+             ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
         <ResourceDictionary>
             <!-- WPF-UI(Fluent / Windows 11 風)の配色と標準コントロールのスタイル。

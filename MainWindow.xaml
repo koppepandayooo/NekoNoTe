@@ -4,9 +4,11 @@
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:behaviors="clr-namespace:NekoNoTe.Behaviors"
         xmlns:roblox="clr-namespace:NekoNoTe.Roblox"
+        xmlns:earthquake="clr-namespace:NekoNoTe.Earthquake"
         xmlns:updates="clr-namespace:NekoNoTe.Updates"
+        xmlns:settings="clr-namespace:NekoNoTe.Settings"
         Title="NekoNoTe"
-        Width="1280" Height="800"
+        Width="1536" Height="864"
         MinWidth="860" MinHeight="560"
         WindowStartupLocation="CenterScreen"
         ExtendsContentIntoTitleBar="True"
@@ -45,10 +47,30 @@
                                          HorizontalAlignment="Right" VerticalAlignment="Center" Visibility="Collapsed" ToolTip="新しいバージョンがあります"/>
                             </Grid>
                         </ToggleButton>
+                        <ToggleButton x:Name="SettingsNavButton" Style="{StaticResource NavButtonStyle}" Click="NavButton_Click">
+                            <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="30"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                <ui:SymbolIcon Symbol="Settings24" FontSize="18" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="設定" FontSize="13.5" VerticalAlignment="Center"/>
+                            </Grid>
+                        </ToggleButton>
                     </StackPanel>
 
                     <ScrollViewer VerticalScrollBarVisibility="Auto" behaviors:SmoothScrollBehavior.IsEnabled="True">
                         <StackPanel>
+                            <TextBlock Text="防災" Style="{StaticResource SidebarSectionStyle}"/>
+                            <ToggleButton x:Name="EarthquakeNavButton" Style="{StaticResource NavButtonStyle}" Click="NavButton_Click">
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="30"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                    <ui:SymbolIcon Symbol="Pulse24" FontSize="18" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="地震" FontSize="13.5" VerticalAlignment="Center"/>
+                                    <Border Grid.Column="2" HorizontalAlignment="Right" CornerRadius="8" Padding="7,1" Background="#14FFFFFF" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse x:Name="EarthquakeNavDot" Width="6" Height="6" Fill="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="EarthquakeNavText" Text="接続中" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}" Margin="5,0,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </ToggleButton>
+
                             <TextBlock Text="ゲーム" Style="{StaticResource SidebarSectionStyle}"/>
                             <ToggleButton x:Name="RobloxNavButton" Style="{StaticResource NavButtonStyle}" IsChecked="True" Click="NavButton_Click">
                                 <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="30"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
@@ -64,8 +86,10 @@
             <Border Grid.Column="1" Background="{StaticResource LayerBrush}"
                     BorderBrush="{StaticResource BorderBrush2}" BorderThickness="1,1,0,0" CornerRadius="8,0,0,0">
                 <Grid Margin="40,34,40,28">
+                    <earthquake:EarthquakePanel x:Name="EarthquakePanel" Visibility="Collapsed"/>
                     <roblox:RobloxPanel x:Name="RobloxPanel"/>
                     <updates:UpdatePanel x:Name="UpdatePanel" Visibility="Collapsed"/>
+                    <settings:SettingsPanel x:Name="SettingsPanel" Visibility="Collapsed"/>
                 </Grid>
             </Border>
         </Grid>

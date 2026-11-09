@@ -1,0 +1,130 @@
+<UserControl x:Class="NekoNoTe.Settings.SettingsPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:behaviors="clr-namespace:NekoNoTe.Behaviors"
+             Background="Transparent">
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,14">
+            <TextBlock Text="設定" FontSize="28" FontWeight="SemiBold"/>
+            <TextBlock Text="変更はすぐに保存されます" Style="{StaticResource PageSubtitleStyle}"/>
+        </StackPanel>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto" behaviors:SmoothScrollBehavior.IsEnabled="True">
+        <Grid Margin="-7,0,-7,0" VerticalAlignment="Top">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel>
+            <Border Style="{StaticResource GlassCardStyle}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                        <Border Style="{StaticResource IconChipStyle}"><ui:SymbolIcon Symbol="Power24" FontSize="16"/></Border>
+                        <TextBlock Text="起動" Style="{StaticResource CardTitleStyle}"/>
+                    </StackPanel>
+                    <DockPanel>
+                        <ui:ToggleSwitch x:Name="StartupToggle" DockPanel.Dock="Right" Click="Startup_Click"/>
+                        <StackPanel>
+                            <TextBlock Text="Windows の起動時に開く" FontSize="13.5" FontWeight="SemiBold"/>
+                            <TextBlock Text="サインインした時に NekoNoTe を自動で起動します" Style="{StaticResource NoteTextStyle}"/>
+                        </StackPanel>
+                    </DockPanel>
+                    <DockPanel Margin="0,14,0,0">
+                        <ui:ToggleSwitch x:Name="UpdateCheckToggle" DockPanel.Dock="Right" Click="UpdateCheck_Click"/>
+                        <StackPanel>
+                            <TextBlock Text="起動時にアップデートを確認" FontSize="13.5" FontWeight="SemiBold"/>
+                            <TextBlock Text="新しいバージョンがあると、サイドバーに印が出ます" Style="{StaticResource NoteTextStyle}"/>
+                        </StackPanel>
+                    </DockPanel>
+                    <DockPanel Margin="0,14,0,0">
+                        <ui:ToggleSwitch x:Name="CloseToTrayToggle" DockPanel.Dock="Right" Click="CloseToTray_Click"/>
+                        <StackPanel>
+                            <TextBlock Text="閉じてもタスクトレイに残る" FontSize="13.5" FontWeight="SemiBold"/>
+                            <TextBlock Text="オフにすると、閉じている間は地震の通知が届きません" Style="{StaticResource NoteTextStyle}"/>
+                        </StackPanel>
+                    </DockPanel>
+                    <TextBlock x:Name="ErrorText" Foreground="{StaticResource ActivityWarningBrush}" FontSize="12" Margin="0,10,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource GlassCardStyle}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                        <Border Style="{StaticResource IconChipStyle}"><ui:SymbolIcon Symbol="Pulse24" FontSize="16"/></Border>
+                        <TextBlock Text="地震" Style="{StaticResource CardTitleStyle}"/>
+                    </StackPanel>
+                    <TextBlock Text="受信のしかた" Style="{StaticResource FieldLabelStyle}"/>
+                    <ComboBox x:Name="SourceCombo" SelectionChanged="Source_Changed">
+                        <ComboBoxItem Content="自動(同じネットワークの PC と共有する)" Tag="Auto"/>
+                        <ComboBoxItem Content="このPCで直接受信する" Tag="Direct"/>
+                        <ComboBoxItem Content="受信しない" Tag="Off"/>
+                    </ComboBox>
+                    <TextBlock Style="{StaticResource NoteTextStyle}" Margin="0,4,0,0" TextWrapping="Wrap"
+                               Text="自動にすると、同じネットワークの中の 1 台だけが受信して、他の PC に配ります。"/>
+                    <TextBlock x:Name="FirewallText" Foreground="{StaticResource ActivityWarningBrush}" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap" Visibility="Collapsed"
+                               Text="Windows のファイアウォールでブロックされているので、他の PC には共有できません(このPCでの受信はできます)。"/>
+                    <TextBlock Text="通知する最小震度" Style="{StaticResource FieldLabelStyle}" Margin="0,12,0,6"/>
+                    <ComboBox x:Name="IntensityCombo" SelectionChanged="Intensity_Changed"/>
+                    <TextBlock Text="住んでいる都道府県(緊急地震速報の到達予想に使います)" Style="{StaticResource FieldLabelStyle}" Margin="0,12,0,6"/>
+                    <ComboBox x:Name="AreaCombo" SelectionChanged="Area_Changed"/>
+                    <TextBlock Text="通知音の大きさ" Style="{StaticResource FieldLabelStyle}" Margin="0,12,0,6"/>
+                    <DockPanel>
+                        <TextBlock x:Name="VolumeText" DockPanel.Dock="Right" Style="{StaticResource SliderValueStyle}" Width="44" TextAlignment="Right"/>
+                        <Slider x:Name="VolumeSlider" Minimum="0" Maximum="100" ValueChanged="Volume_Changed"/>
+                    </DockPanel>
+                    <Button Height="34" Padding="12,0" Margin="0,12,0,0" Click="TestNotification_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="Alert24" FontSize="14"/>
+                            <TextBlock Text="テスト通知" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Border>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1">
+                <Border Style="{StaticResource GlassCardStyle}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                            <Border Style="{StaticResource IconChipStyle}"><ui:SymbolIcon Symbol="Folder24" FontSize="16"/></Border>
+                            <TextBlock Text="データ" Style="{StaticResource CardTitleStyle}"/>
+                        </StackPanel>
+                        <TextBlock x:Name="DataPathText" Style="{StaticResource NoteTextStyle}" TextWrapping="Wrap"/>
+                        <Button Height="34" Padding="12,0" Margin="0,12,0,0" Click="OpenData_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="FolderOpen24" FontSize="14"/>
+                                <TextBlock Text="フォルダを開く" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource GlassCardStyle}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                            <Border Style="{StaticResource IconChipStyle}"><ui:SymbolIcon Symbol="Info24" FontSize="16"/></Border>
+                            <TextBlock Text="このアプリについて" Style="{StaticResource CardTitleStyle}"/>
+                        </StackPanel>
+                        <TextBlock x:Name="VersionText" FontSize="13.5" FontWeight="SemiBold"/>
+                        <TextBlock Style="{StaticResource NoteTextStyle}" Margin="0,4,0,0" TextWrapping="Wrap"
+                                   Text="GPL-3.0 で公開しています。Roblox の機能は Roblox Account Manager(作者 ic3w0lf22)を元にしています。地震のデータは P2P地震情報のものです。地図は「国土数値情報(行政区域データ)」(国土交通省、CC BY 4.0)を加工して作成しています。"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                            <Button Height="34" Padding="12,0" Click="GitHub_Click">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="Open24" FontSize="14"/>
+                                    <TextBlock Text="GitHub" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Height="34" Padding="12,0" Margin="6,0,0,0" Click="License_Click">
+                                <TextBlock Text="ライセンス" VerticalAlignment="Center"/>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

@@ -11,7 +11,7 @@
     <ApplicationIcon>Resources\app.ico</ApplicationIcon>
     <AssemblyName>NekoNoTe</AssemblyName>
     <RootNamespace>NekoNoTe</RootNamespace>
-    <Version>0.2.0</Version>
+    <Version>0.3.0</Version>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
@@ -25,5 +25,6 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\app.ico" />
+    <Content Include="Resources\Sounds\*.wav"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory><ExcludeFromSingleFile>true</ExcludeFromSingleFile></Content>
   </ItemGroup>
 </Project>
