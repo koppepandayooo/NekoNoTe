@@ -1,0 +1,100 @@
+<UserControl x:Class="NekoNoTe.Roblox.RobloxPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:behaviors="clr-namespace:NekoNoTe.Behaviors"
+             Background="Transparent">
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,14">
+            <TextBlock Text="Roblox" FontSize="28" FontWeight="SemiBold"/>
+            <TextBlock Text="アカウントを切り替えて起動" Style="{StaticResource PageSubtitleStyle}"/>
+        </StackPanel>
+
+        <!-- メッセージ -->
+        <Border x:Name="MessageBar" DockPanel.Dock="Top" CornerRadius="10" Padding="14,10" Margin="0,0,0,8"
+                Background="#1F60CDFF" BorderBrush="#3360CDFF" BorderThickness="1" Visibility="Collapsed">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="✕" Width="26" Height="26" Padding="0" FontSize="11" Click="CloseMessage_Click"
+                        Background="Transparent" BorderThickness="0"/>
+                <TextBlock x:Name="MessageText" TextWrapping="Wrap" FontSize="13" VerticalAlignment="Center"/>
+            </DockPanel>
+        </Border>
+
+        <Grid Margin="-7,0,-7,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="340"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- ===== アカウント ===== -->
+            <Border Grid.Column="0" Style="{StaticResource GlassCardStyle}">
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <Button Height="32" Padding="12,0" Style="{StaticResource AccentButtonStyle}" Click="AddLogin_Click">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="PersonAdd24" FontSize="14"/>
+                                    <TextBlock Text="ログインして追加" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Height="32" Width="38" Padding="0" Margin="6,0,0,0" Click="More_Click" ToolTip="ほかの追加のしかた">
+                                <ui:SymbolIcon Symbol="MoreHorizontal24" FontSize="15"/>
+                                <Button.ContextMenu>
+                                    <ContextMenu x:Name="MoreMenu">
+                                        <MenuItem Header="Cookie を貼り付けて追加…" Click="AddCookie_Click"/>
+                                        <MenuItem Header="Roblox Account Manager から読み込む" Click="ImportRam_Click"/>
+                                        <Separator/>
+                                        <MenuItem Header="ログインが切れていないか確かめる" Click="CheckAll_Click"/>
+                                    </ContextMenu>
+                                </Button.ContextMenu>
+                            </Button>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Style="{StaticResource IconChipStyle}"><ui:SymbolIcon Symbol="People24" FontSize="16"/></Border>
+                            <TextBlock Text="アカウント" Style="{StaticResource CardTitleStyle}"/>
+                            <TextBlock x:Name="CountText" Style="{StaticResource CardTitleStyle}" FontWeight="Normal" Margin="8,0,0,0"/>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <Grid>
+                        <StackPanel x:Name="EmptyState" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Border Width="60" Height="60" CornerRadius="20" Background="#1F60CDFF" HorizontalAlignment="Center">
+                                <ui:SymbolIcon Symbol="PersonAdd24" FontSize="28" Foreground="{StaticResource AccentBrush}"/>
+                            </Border>
+                            <TextBlock Text="まだアカウントがありません" HorizontalAlignment="Center" FontSize="15" FontWeight="SemiBold" Margin="0,14,0,0"/>
+                            <TextBlock HorizontalAlignment="Center" TextAlignment="Center" Margin="0,4,0,0" Style="{StaticResource NoteTextStyle}"
+                                       Text="«ログインして追加» か、右上の … から&#10;Roblox Account Manager のアカウントを読み込めます。"/>
+                        </StackPanel>
+                        <ScrollViewer x:Name="ListScroll" VerticalScrollBarVisibility="Auto" behaviors:SmoothScrollBehavior.IsEnabled="True">
+                            <StackPanel x:Name="AccountList" Margin="0,0,12,0"/>
+                        </ScrollViewer>
+                    </Grid>
+                </DockPanel>
+            </Border>
+
+            <!-- ===== 起動のしかた ===== -->
+            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" behaviors:SmoothScrollBehavior.IsEnabled="True">
+                <StackPanel>
+                    <Border Style="{StaticResource GlassCardStyle}">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                <Border Style="{StaticResource IconChipStyle}"><ui:SymbolIcon Symbol="Games24" FontSize="16"/></Border>
+                                <TextBlock Text="参加するゲーム" Style="{StaticResource CardTitleStyle}"/>
+                            </StackPanel>
+                            <TextBlock Text="ゲームの URL かプレイス ID" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBox x:Name="PlaceBox" TextChanged="Place_TextChanged"/>
+                            <TextBlock x:Name="PlaceInfoText" Style="{StaticResource NoteTextStyle}" Margin="2,6,0,12"/>
+                            <TextBlock Text="サーバー(JobID・空なら自動)" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBox x:Name="JobBox" TextChanged="Place_TextChanged"/>
+                            <TextBlock Style="{StaticResource NoteTextStyle}" Margin="2,10,0,0"
+                                       Text="空のままにすると、ゲームを選ばずに Roblox だけ開きます。各アカウントの «起動» で、そのアカウントで入ります。"/>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Style="{StaticResource NoteTextStyle}" Margin="9,0,9,8"
+                               Text="ログイン情報(Cookie)は、この PC のこの Windows ユーザーでしか読めない形で暗号化して保存しています。複数のアカウントの使い方によっては Roblox の規約で問題になることがあるので、自己責任で使ってください。"/>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </DockPanel>
+</UserControl>

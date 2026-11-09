@@ -1,0 +1,22 @@
+<ui:FluentWindow x:Class="NekoNoTe.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:roblox="clr-namespace:NekoNoTe.Roblox"
+        Title="NekoNoTe" Icon="Resources/app.ico"
+        Width="1100" Height="720" MinWidth="860" MinHeight="520"
+        WindowStartupLocation="CenterScreen"
+        ExtendsContentIntoTitleBar="True"
+        WindowBackdropType="Mica"
+        WindowCornerPreference="Round"
+        FontFamily="Yu Gothic UI, Segoe UI Variable, Segoe UI" FontSize="13"
+        UseLayoutRounding="True" SnapsToDevicePixels="True">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <ui:TitleBar Title="NekoNoTe" Height="44" Padding="16,0,0,0"/>
+        <roblox:RobloxPanel Grid.Row="1" Margin="32,8,32,24"/>
+    </Grid>
+</ui:FluentWindow>
