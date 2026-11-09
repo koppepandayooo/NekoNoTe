@@ -50,6 +50,13 @@ public partial class EarthquakePanel : System.Windows.Controls.UserControl
 
     public void SelectAlert(AlertInfo alert) => EarthquakeList.SelectedItem = alert;
 
+    /// <summary>履歴に入れず、詳細だけにテストのデータを出す</summary>
+    public void ShowTestAlert(AlertInfo alert)
+    {
+        EarthquakeList.SelectedItem = null;
+        UpdateEarthquakeDetail(alert);
+    }
+
     private void UpdateEmptyEarthquakeVisibility()
     {
         var hasItems = _earthquakeView.Cast<object>().Any();

@@ -100,7 +100,7 @@ public sealed class P2pQuakeService
                         await Task.Delay(Timeout.Infinite, ct);
                         break;
                     case "Direct":
-                        await RunDirectOnceAsync(ct, host: false);
+                        await RunDirectOnceAsync(ct, host: false, watch: false);
                         break;
                     default:
                         var parent = await LanQuakeClient.DiscoverAsync(ct);
@@ -113,7 +113,7 @@ public sealed class P2pQuakeService
                         else
                         {
                             // 親がいないので自分が親になる(ポートが使えない時は、自分の分だけ受信する)
-                            await RunDirectOnceAsync(ct, host: QuakeLanRelay.Instance.SetEnabled(true));
+                            await RunDirectOnceAsync(ct, host: QuakeLanRelay.Instance.SetEnabled(true), watch: true);
                             if (_yielded)
                             {
                                 _yielded = false;
@@ -166,11 +166,11 @@ public sealed class P2pQuakeService
         }
     }
 
-    private async Task RunDirectOnceAsync(CancellationToken ct, bool host)
+    private async Task RunDirectOnceAsync(CancellationToken ct, bool host, bool watch)
     {
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct);
         _hosting = host;
-        if (host) _ = WatchForBetterHostAsync(linked);
+        if (watch) _ = WatchForBetterHostAsync(linked, host);
         try
         {
             using var ws = new ClientWebSocket();
@@ -194,7 +194,7 @@ public sealed class P2pQuakeService
     }
 
     /// <summary>親の間、もっと優先される親が現れたら譲る</summary>
-    private async Task WatchForBetterHostAsync(CancellationTokenSource direct)
+    private async Task WatchForBetterHostAsync(CancellationTokenSource direct, bool host)
     {
         try
         {
@@ -202,7 +202,8 @@ public sealed class P2pQuakeService
             {
                 await Task.Delay(HostCheckInterval, direct.Token);
                 var other = await LanQuakeClient.DiscoverAsync(direct.Token);
-                if (other != null && other.IsBetterThan(QuakeLanRelay.Priority, QuakeLanRelay.StartedTicks, QuakeLanRelay.InstanceId))
+                // 自分が配れていない時(ポートが使えない時)は、親が見つかればそちらから受け取る
+                if (other != null && (!host || other.IsBetterThan(QuakeLanRelay.Priority, QuakeLanRelay.StartedTicks, QuakeLanRelay.InstanceId)))
                 {
                     _yielded = true;
                     direct.Cancel();

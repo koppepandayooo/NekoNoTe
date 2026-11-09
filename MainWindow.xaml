@@ -4,6 +4,7 @@
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:behaviors="clr-namespace:NekoNoTe.Behaviors"
         xmlns:roblox="clr-namespace:NekoNoTe.Roblox"
+        xmlns:home="clr-namespace:NekoNoTe.Home"
         xmlns:earthquake="clr-namespace:NekoNoTe.Earthquake"
         xmlns:updates="clr-namespace:NekoNoTe.Updates"
         xmlns:settings="clr-namespace:NekoNoTe.Settings"
@@ -22,6 +23,21 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
+        <!-- ===== 背景画像(設定した時だけ表示して、その上に半透明の背景色を重ねる) ===== -->
+        <Image x:Name="BackgroundImage" Grid.RowSpan="2" Stretch="UniformToFill" Margin="-90" IsHitTestVisible="False" Visibility="Collapsed">
+            <Image.Effect>
+                <BlurEffect x:Name="BackgroundBlur" Radius="70" KernelType="Gaussian" RenderingBias="Performance"/>
+            </Image.Effect>
+        </Image>
+        <Rectangle x:Name="BackgroundShade" Grid.RowSpan="2" IsHitTestVisible="False" Visibility="Collapsed">
+            <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#5C0A0A12" Offset="0"/>
+                    <GradientStop Color="#A60A0A12" Offset="1"/>
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+
         <ui:TitleBar Grid.Row="0" Title="" Height="44" Padding="16,0,0,0"/>
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="20,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left"
                     IsHitTestVisible="False">
@@ -36,7 +52,7 @@
             </Grid.ColumnDefinitions>
 
             <!-- ===== 左サイドバー(機能を足す時は、ここにボタン、右にパネルを足して MainWindow.xaml.cs の Pages に並べる) ===== -->
-            <Border Grid.Column="0" Background="Transparent">
+            <Border x:Name="SidebarBorder" Grid.Column="0" Background="Transparent">
                 <DockPanel Margin="0,8,0,12">
                     <StackPanel DockPanel.Dock="Bottom">
                         <ToggleButton x:Name="UpdateNavButton" Style="{StaticResource NavButtonStyle}" Click="NavButton_Click">
@@ -57,6 +73,13 @@
 
                     <ScrollViewer VerticalScrollBarVisibility="Auto" behaviors:SmoothScrollBehavior.IsEnabled="True">
                         <StackPanel>
+                            <ToggleButton x:Name="HomeNavButton" Style="{StaticResource NavButtonStyle}" IsChecked="True" Click="NavButton_Click">
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="30"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                    <ui:SymbolIcon Symbol="Home24" FontSize="18" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="ホーム" FontSize="13.5" VerticalAlignment="Center"/>
+                                </Grid>
+                            </ToggleButton>
+
                             <TextBlock Text="防災" Style="{StaticResource SidebarSectionStyle}"/>
                             <ToggleButton x:Name="EarthquakeNavButton" Style="{StaticResource NavButtonStyle}" Click="NavButton_Click">
                                 <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="30"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
@@ -72,7 +95,7 @@
                             </ToggleButton>
 
                             <TextBlock Text="ゲーム" Style="{StaticResource SidebarSectionStyle}"/>
-                            <ToggleButton x:Name="RobloxNavButton" Style="{StaticResource NavButtonStyle}" IsChecked="True" Click="NavButton_Click">
+                            <ToggleButton x:Name="RobloxNavButton" Style="{StaticResource NavButtonStyle}" Click="NavButton_Click">
                                 <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="30"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                     <ui:SymbolIcon Symbol="Cube24" FontSize="18" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                                     <TextBlock Grid.Column="1" Text="Roblox" FontSize="13.5" VerticalAlignment="Center"/>
@@ -83,11 +106,12 @@
                 </DockPanel>
             </Border>
 
-            <Border Grid.Column="1" Background="{StaticResource LayerBrush}"
+            <Border x:Name="ContentBorder" Grid.Column="1" Background="{StaticResource LayerBrush}"
                     BorderBrush="{StaticResource BorderBrush2}" BorderThickness="1,1,0,0" CornerRadius="8,0,0,0">
                 <Grid Margin="40,34,40,28">
                     <earthquake:EarthquakePanel x:Name="EarthquakePanel" Visibility="Collapsed"/>
-                    <roblox:RobloxPanel x:Name="RobloxPanel"/>
+                    <home:HomePanel x:Name="HomePanel"/>
+                    <roblox:RobloxPanel x:Name="RobloxPanel" Visibility="Collapsed"/>
                     <updates:UpdatePanel x:Name="UpdatePanel" Visibility="Collapsed"/>
                     <settings:SettingsPanel x:Name="SettingsPanel" Visibility="Collapsed"/>
                 </Grid>

@@ -43,8 +43,10 @@ public partial class App : System.Windows.Application
         _history = new AlertHistoryStore();
         _stateStore = new AlertStateStore();
         _notifications = new NotificationManager(
-            () => Forms.Screen.PrimaryScreen!, () => 7, () => NotificationCorner.TopRight,
-            () => "Chime", () => AppSettings.Current.NotificationVolume);
+            () => Forms.Screen.AllScreens.FirstOrDefault(x => x.DeviceName == AppSettings.Current.MonitorDeviceName) ?? Forms.Screen.PrimaryScreen!,
+            () => AppSettings.Current.NotificationDurationSeconds,
+            () => Enum.TryParse<NotificationCorner>(AppSettings.Current.NotificationCorner, out var corner) ? corner : NotificationCorner.TopRight,
+            () => AppSettings.Current.NotificationSound, () => AppSettings.Current.NotificationVolume);
 
         _mainWindow = new MainWindow(_history);
         CreateTray();
@@ -141,6 +143,14 @@ public partial class App : System.Windows.Application
             Body = "地震が起きると、ここにお知らせが出ます。",
             ReportedAt = DateTimeOffset.Now,
         });
+    }
+
+    /// <summary>緊急地震速報の見え方を試す(履歴には入れない)</summary>
+    public void ShowTestEew()
+    {
+        var alert = TestAlertFactory.CreateGreatEastJapanEew(arrivalSeconds: 15);
+        _notifications.Show(alert);
+        _mainWindow.ShowTestAlert(alert);
     }
 
     private void HandleNewAlert(AlertInfo alert, bool notify)

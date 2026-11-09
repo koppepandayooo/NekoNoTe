@@ -33,12 +33,40 @@ public partial class UpdatePanel : System.Windows.Controls.UserControl
         _release = available ? latest : null;
 
         InstallButton.Visibility = available && UpdateService.CanInstall ? Visibility.Visible : Visibility.Collapsed;
-        NotesTitle.Visibility = NotesText.Visibility = available && latest!.Notes != "" ? Visibility.Visible : Visibility.Collapsed;
-        NotesText.Text = available ? latest!.Notes : "";
+        var notes = available ? FormatNotes(latest!.Notes) : "";
+        NotesTitle.Visibility = NotesText.Visibility = notes != "" ? Visibility.Visible : Visibility.Collapsed;
+        NotesText.Text = notes;
         StatusText.Text = !available ? "最新のバージョンです"
             : UpdateService.CanInstall ? $"新しいバージョン {latest!.Tag} があります"
             : $"新しいバージョン {latest!.Tag} があります(GitHub からインストーラーを入れてください)";
         UpdateAvailableChanged?.Invoke(available);
+    }
+
+    /// <summary>
+    /// GitHub のリリースの本文(Markdown)を、読みやすい文字にする。
+    /// «変更点» の見出しがあれば、そこだけを出す
+    /// </summary>
+    private static string FormatNotes(string markdown)
+    {
+        var lines = markdown.Replace("\r\n", "\n").Split('\n').ToList();
+        var start = lines.FindIndex(l => l.TrimStart().StartsWith('#') && l.Contains("変更点"));
+        if (start >= 0)
+        {
+            var end = lines.FindIndex(start + 1, l => l.TrimStart().StartsWith('#'));
+            lines = lines.GetRange(start + 1, (end < 0 ? lines.Count : end) - start - 1);
+        }
+
+        var result = new List<string>();
+        foreach (var raw in lines)
+        {
+            var line = raw.Trim();
+            line = System.Text.RegularExpressions.Regex.Replace(line, @"\[([^\]]*)\]\([^)]*\)", "$1");   // リンクは文字だけ
+            line = line.Replace("**", "").Replace("`", "").Replace("«", "「").Replace("»", "」");
+            if (line.StartsWith('#')) line = line.TrimStart('#').Trim();
+            else if (line.StartsWith("- ") || line.StartsWith("* ")) line = "・" + line[2..].Trim();
+            result.Add(line);
+        }
+        return string.Join("\n", result).Trim();
     }
 
     private async void Check_Click(object sender, RoutedEventArgs e)

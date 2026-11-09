@@ -24,6 +24,13 @@ public sealed class AppSettings
     /// <summary>緊急地震速報のカウントダウンに使う地域(都道府県)</summary>
     public string AreaName { get; set; } = "";
     public double NotificationVolume { get; set; } = 0.5;
+    public string? MonitorDeviceName { get; set; }
+    public string NotificationCorner { get; set; } = "TopRight";
+    public int NotificationDurationSeconds { get; set; } = 7;
+    public string NotificationSound { get; set; } = "Chime";
+    public string? BackgroundImagePath { get; set; }
+    public double BackgroundBlur { get; set; } = 30;
+    public double BackgroundDim { get; set; } = 80;
 
     private static AppSettings Load()
     {

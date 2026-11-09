@@ -33,10 +33,10 @@ public static class LanQuakeClient
         return b[0] == 10 || b[0] == 127 || (b[0] == 192 && b[1] == 168) || (b[0] == 172 && b[1] is >= 16 and <= 31);
     }
 
-    /// <summary>この PC から届く範囲のブロードキャスト先</summary>
-    private static List<IPAddress> Targets()
+    /// <summary>この PC のネットワークごとのアドレスと、そのブロードキャスト先</summary>
+    private static List<(IPAddress Local, IPAddress Broadcast)> Networks()
     {
-        var list = new List<IPAddress> { IPAddress.Loopback, IPAddress.Broadcast };
+        var list = new List<(IPAddress, IPAddress)>();
         try
         {
             foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
@@ -49,7 +49,7 @@ public static class LanQuakeClient
                     var mask = ua.IPv4Mask.GetAddressBytes();
                     var broadcast = new byte[4];
                     for (int i = 0; i < 4; i++) broadcast[i] = (byte)(ip[i] | ~mask[i]);
-                    list.Add(new IPAddress(broadcast));
+                    list.Add((ua.Address, new IPAddress(broadcast)));
                 }
             }
         }
@@ -57,44 +57,81 @@ public static class LanQuakeClient
         return list;
     }
 
+    /// <summary>UDP のソケットを 1 つ作る(誰もいない宛先に送った時の «接続リセット» で受信が失敗しないようにする)</summary>
+    private static UdpClient CreateSocket(IPAddress local)
+    {
+        var udp = new UdpClient(AddressFamily.InterNetwork) { EnableBroadcast = true };
+        udp.Client.Bind(new IPEndPoint(local, 0));
+        const int SioUdpConnReset = -1744830452;
+        udp.Client.IOControl(SioUdpConnReset, new byte[] { 0 }, null);
+        return udp;
+    }
+
     /// <summary>配っている親を探して、いちばん優先される親を返す(自分は除く)。いなければ null</summary>
     public static async Task<LanHost?> DiscoverAsync(CancellationToken ct)
     {
-        using var udp = new UdpClient(AddressFamily.InterNetwork) { EnableBroadcast = true };
-        udp.Client.Bind(new IPEndPoint(IPAddress.Any, 0));
-        var request = Encoding.ASCII.GetBytes(DiscoverMessage);
-        foreach (var target in Targets())
-        {
-            try { await udp.SendAsync(request, new IPEndPoint(target, UdpPort), ct); }
-            catch (SocketException) { }
-        }
-
+        // VPN などがあると、宛先だけ指定したブロードキャストは別のネットワークに出てしまう。
+        // ネットワークごとにソケットを作って、それぞれのネットワークに送る
+        var sockets = new List<UdpClient>();
         var hosts = new List<LanHost>();
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        timeout.CancelAfter(DiscoverTimeout);
+        var request = Encoding.ASCII.GetBytes(DiscoverMessage);
         try
         {
-            while (true)
+            async Task SendAsync(IPAddress local, params IPAddress[] targets)
             {
-                var reply = await udp.ReceiveAsync(timeout.Token);
-                if (!IsLocalNetwork(reply.RemoteEndPoint.Address)) continue;
-                var parts = Encoding.ASCII.GetString(reply.Buffer).Split(' ');
-                if (parts.Length == 5 && parts[0] == HostMessage && parts[4] != QuakeLanRelay.InstanceId
-                    && int.TryParse(parts[1], out var port) && port is > 0 and < 65536
-                    && int.TryParse(parts[2], out var priority) && long.TryParse(parts[3], out var started)
-                    && hosts.All(h => h.Id != parts[4]))
+                UdpClient udp;
+                try { udp = CreateSocket(local); }
+                catch (SocketException) { return; }
+                sockets.Add(udp);
+                foreach (var target in targets)
                 {
-                    hosts.Add(new LanHost(new IPEndPoint(reply.RemoteEndPoint.Address, port), priority, started, parts[4]));
+                    try { await udp.SendAsync(request, new IPEndPoint(target, UdpPort), ct); }
+                    catch (SocketException) { }
                 }
             }
+
+            await SendAsync(IPAddress.Loopback, IPAddress.Loopback);
+            foreach (var (local, broadcast) in Networks())
+                await SendAsync(local, IPAddress.Broadcast, broadcast);
+
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            timeout.CancelAfter(DiscoverTimeout);
+            await Task.WhenAll(sockets.Select(udp => ReceiveRepliesAsync(udp, hosts, timeout.Token)));
+            ct.ThrowIfCancellationRequested();
         }
-        catch (OperationCanceledException) when (!ct.IsCancellationRequested) { }
-        catch (SocketException) { }
+        finally
+        {
+            foreach (var udp in sockets) udp.Dispose();
+        }
 
         LanHost? best = null;
         foreach (var h in hosts)
             if (best == null || h.IsBetterThan(best.Priority, best.StartedTicks, best.Id)) best = h;
         return best;
+    }
+
+    private static async Task ReceiveRepliesAsync(UdpClient udp, List<LanHost> hosts, CancellationToken ct)
+    {
+        while (!ct.IsCancellationRequested)
+        {
+            UdpReceiveResult reply;
+            try { reply = await udp.ReceiveAsync(ct); }
+            catch (OperationCanceledException) { return; }
+            catch (SocketException) { continue; }   // 1 つの宛先の失敗で、他の親の返事を捨てない
+
+            if (!IsLocalNetwork(reply.RemoteEndPoint.Address)) continue;
+            var parts = Encoding.ASCII.GetString(reply.Buffer).Split(' ');
+            if (parts.Length == 5 && parts[0] == HostMessage && parts[4] != QuakeLanRelay.InstanceId
+                && int.TryParse(parts[1], out var port) && port is > 0 and < 65536
+                && int.TryParse(parts[2], out var priority) && long.TryParse(parts[3], out var started))
+            {
+                lock (hosts)
+                {
+                    if (hosts.All(h => h.Id != parts[4]))
+                        hosts.Add(new LanHost(new IPEndPoint(reply.RemoteEndPoint.Address, port), priority, started, parts[4]));
+                }
+            }
+        }
     }
 
     /// <summary>つながっている間ずっと受け取る。切れたら戻る</summary>
