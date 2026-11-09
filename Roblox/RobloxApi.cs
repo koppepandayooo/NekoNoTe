@@ -125,7 +125,42 @@ public static class RobloxApi
     }
 }
 
-public static class RobloxProcess
+/// <summary>
+/// Roblox の多重起動(元は Roblox Account Manager の «Multi Roblox»)。
+/// Roblox は «ROBLOX_singletonMutex» という印で «もう起動している» かを見ているので、
+/// NekoNoTe が先にその印を持っておくと、何個でも起動できるようになる。
+/// </summary>
+public static class RobloxMultiInstance
 {
-    public static bool Running() => Process.GetProcessesByName("RobloxPlayerBeta").Length > 0;
+    private static Mutex? _mutex;
+
+    public static bool Enabled => _mutex != null;
+
+    /// <summary>オンにする。Roblox がもう起動している時は印を取れないので false</summary>
+    public static bool Enable()
+    {
+        if (_mutex != null) return true;
+        try
+        {
+            var m = new Mutex(true, "ROBLOX_singletonMutex", out var created);
+            if (!created && !m.WaitOne(TimeSpan.Zero))
+            {
+                m.Dispose();
+                return false;
+            }
+            _mutex = m;
+            return true;
+        }
+        catch { return false; }
+    }
+
+    public static void Disable()
+    {
+        if (_mutex == null) return;
+        try { _mutex.ReleaseMutex(); } catch { }
+        _mutex.Dispose();
+        _mutex = null;
+    }
+
+    public static bool RobloxRunning() => Process.GetProcessesByName("RobloxPlayerBeta").Length > 0;
 }

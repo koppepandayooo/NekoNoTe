@@ -14,9 +14,10 @@ using WpfMenuItem = System.Windows.Controls.MenuItem;
 
 namespace NekoNoTe.Roblox;
 
-/// <summary>最後に入れたゲーム</summary>
+/// <summary>Roblox タブの設定(多重起動・最後に入れたゲーム)</summary>
 public sealed class RobloxSettings
 {
+    public bool MultiInstance { get; set; }
     public string Place { get; set; } = "";
     public string Job { get; set; } = "";
 
@@ -49,10 +50,18 @@ public partial class RobloxPanel : System.Windows.Controls.UserControl
         InitializeComponent();
         PlaceBox.Text = _settings.Place;
         JobBox.Text = _settings.Job;
+        MultiSwitch.IsChecked = RobloxMultiInstance.Enabled;
         _loading = false;
+        UpdateMultiText();
         UpdatePlaceInfo();
         RobloxAccounts.Changed += () => Dispatcher.BeginInvoke(Render);
         Loaded += async (_, _) => { Render(); await LoadHeadshotsAsync(); };
+    }
+
+    /// <summary>アプリの起動時に、前回オンにしていたら多重起動をオンにする</summary>
+    public static void ApplyStartupSettings()
+    {
+        if (RobloxSettings.Load().MultiInstance) RobloxMultiInstance.Enable();
     }
 
     // ---------- 一覧 ----------
@@ -261,8 +270,8 @@ public partial class RobloxPanel : System.Windows.Controls.UserControl
     {
         var place = RobloxApi.ParsePlaceId(PlaceBox.Text);
         if (PlaceBox.Text.Trim() != "" && place == 0) { ShowMessage("ゲームの URL かプレイス ID を読み取れませんでした。", bad: true); return; }
-        if (RobloxProcess.Running())
-            ShowMessage("Roblox がもう起動しています。別のアカウントで起動すると、前の Roblox は閉じられます。");
+        if (RobloxMultiInstance.RobloxRunning() && !RobloxMultiInstance.Enabled)
+            ShowMessage("Roblox がもう起動しています。多重起動がオフなので、前の Roblox は閉じられます。");
         button.IsEnabled = false;
         try
         {
@@ -287,6 +296,31 @@ public partial class RobloxPanel : System.Windows.Controls.UserControl
         var id = RobloxApi.ParsePlaceId(PlaceBox.Text);
         PlaceInfoText.Text = PlaceBox.Text.Trim() == "" ? "空: ゲームを選ばずに開く"
             : id > 0 ? $"プレイス ID: {id}" : "読み取れません(https://www.roblox.com/games/… の URL か数字)";
+    }
+
+    // ---------- 多重起動 ----------
+
+    private void Multi_Click(object sender, RoutedEventArgs e)
+    {
+        if (MultiSwitch.IsChecked == true)
+        {
+            if (!RobloxMultiInstance.Enable())
+            {
+                MultiSwitch.IsChecked = false;
+                ShowMessage("Roblox が起動しているのでオンにできませんでした。Roblox を全部閉じてからオンにしてください。", bad: true);
+            }
+        }
+        else RobloxMultiInstance.Disable();
+        _settings.MultiInstance = RobloxMultiInstance.Enabled;
+        _settings.Save();
+        UpdateMultiText();
+    }
+
+    private void UpdateMultiText()
+    {
+        MultiText.Text = RobloxMultiInstance.Enabled
+            ? "オン: Roblox を何個でも同時に起動できます。NekoNoTe を閉じる(タスクトレイからも終了する)とオフに戻ります。"
+            : "オフ: Roblox は1個だけ。オンにする時は、先に Roblox を全部閉じてください。";
     }
 
     // ---------- メッセージ ----------
