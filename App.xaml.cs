@@ -22,6 +22,7 @@ public partial class App : System.Windows.Application
     private AlertStateStore _stateStore = null!;
     private NotificationManager _notifications = null!;
     private P2pQuakeService _quake = null!;
+    private WolfxEewService _wolfx = null!;
     private readonly HashSet<DateTimeOffset> _notifiedEarthquakeTimes = new();
 
     /// <summary>本当に終わる時(トレイに隠さない)</summary>
@@ -39,6 +40,7 @@ public partial class App : System.Windows.Application
         }
         NekoNoTe.Behaviors.Motion.Init();
         RobloxPanel.ApplyStartupSettings();
+        NekoNoTe.LanShare.LanSharePanel.ApplyStartupSettings();
 
         _history = new AlertHistoryStore();
         _stateStore = new AlertStateStore();
@@ -56,6 +58,9 @@ public partial class App : System.Windows.Application
         _quake.AlertReceived += alert => Dispatcher.Invoke(() => HandleNewAlert(alert, notify: true));
         _quake.StatusChanged += (connected, text) => Dispatcher.Invoke(() => _mainWindow.SetQuakeStatus(connected, text));
         _quake.Start();
+        _wolfx = new WolfxEewService(AppSettings.Current);
+        _wolfx.AlertReceived += alert => Dispatcher.Invoke(() => HandleNewAlert(alert, notify: true));
+        ApplyWolfxSetting();
         _ = CatchUpSinceLastRunAsync();
 
         if (!e.Args.Contains(BackgroundArgument))
@@ -117,6 +122,7 @@ public partial class App : System.Windows.Application
     {
         IsExiting = true;
         _quake?.Stop();
+        _wolfx?.Stop();
         if (_tray != null)
         {
             _tray.Visible = false;
@@ -131,6 +137,15 @@ public partial class App : System.Windows.Application
     {
         _quake.Stop();
         _quake.Start();
+        ApplyWolfxSetting();
+    }
+
+    /// <summary>Wolfx への接続を設定に合わせる(«受信しない» の時はつながない)。PC ごとに 1 本だけ直接つなぐ</summary>
+    public void ApplyWolfxSetting()
+    {
+        var s = AppSettings.Current;
+        if (s.UseWolfxEew && s.QuakeSource != "Off") _wolfx.Start();
+        else _wolfx.Stop();
     }
 
     public void ShowTestNotification()
@@ -155,15 +170,36 @@ public partial class App : System.Windows.Application
 
     private void HandleNewAlert(AlertInfo alert, bool notify)
     {
-        if (!_stateStore.IsNew(alert.Id)) return;
-        _stateStore.MarkSeen(alert.Id);
-
-        // 取消報は別件として積まず、元の緊急地震速報を «取消» に置き換える
-        if (alert.CancelsAlertId is { } cancelledId)
+        if (!_stateStore.IsNew(alert.Id))
         {
-            if (_history.MarkCancelled(cancelledId) is not null && notify) _notifications.Show(alert);
+            // 同じ緊急地震速報が Wolfx と P2P地震情報の両方から届く。先に Wolfx の報を出していたら、
+            // P2P地震情報の方にだけある主要動の到達時刻を足す
+            if (alert.Kind == AlertKind.EewWarning && alert.Detail?.ArrivalTime is { } arrival)
+            {
+                var merged = _history.Update(alert.Id, a => a.Detail?.ArrivalTime is null ? a.WithArrivalTime(arrival) : null);
+                if (merged is { } m)
+                {
+                    _mainWindow.ReplaceAlertSelection(m.Old, m.New);
+                    _notifications.UpdateArrival(alert.Id, arrival);   // 表示中のポップアップにもカウントダウンを足す
+                }
+            }
             return;
         }
+        _stateStore.MarkSeen(alert.Id);
+
+        // 取消報は別件として積まず、元の緊急地震速報を «取消» に置き換える。予報だけ出ていた時は予報を取り消す
+        if (alert.CancelsAlertId is { } cancelledId)
+        {
+            var cancelled = _history.MarkCancelled(cancelledId);
+            if (cancelled is null && cancelledId.StartsWith("eew:", StringComparison.Ordinal))
+                cancelled = _history.MarkCancelled("eew-forecast:" + cancelledId["eew:".Length..]);
+            if (cancelled is not null && notify) _notifications.Show(alert);
+            return;
+        }
+
+        // 警報が出たら、同じ地震の予報は一覧から外す(警報に置き換わる)
+        if (alert.Id.StartsWith("eew:", StringComparison.Ordinal))
+            _history.Remove("eew-forecast:" + alert.Id["eew:".Length..]);
 
         _history.Add(alert);
 

@@ -22,6 +22,8 @@ public partial class NotificationWindow : Window
 
     private readonly DispatcherTimer _dismissTimer;
     private readonly TimeSpan _displayDuration;
+    /// <summary>残り時間のバーが減りきるまでの長さ(カウントダウン中は到達まで延びる)</summary>
+    private TimeSpan _remainingDuration;
     private DispatcherTimer? _moveTimer;
     private int _currentStackOffset;
     private System.Windows.Forms.Screen? _currentScreen;
@@ -30,9 +32,22 @@ public partial class NotificationWindow : Window
 
     public int PhysicalHeight { get; private set; }
 
+    /// <summary>表示中の通知の元になった AlertInfo.Id(到達時刻があとから分かった時に探すのに使う)</summary>
+    public string AlertId { get; }
+
+    // 到達してからもしばらくは出したままにする
+    private static readonly TimeSpan KeepAfterArrival = TimeSpan.FromSeconds(10);
+    // 到達予想がこれより前なら(古い報など)カウントダウンは出さない
+    private static readonly TimeSpan CountdownStale = TimeSpan.FromSeconds(30);
+    // カウントダウンで出しておく長さの上限
+    private static readonly TimeSpan MaxCountdownDisplay = TimeSpan.FromMinutes(3);
+    private DispatcherTimer? _countdownTimer;
+    private DateTimeOffset? _arrival;
+
     public NotificationWindow(AlertInfo alert, int durationSeconds)
     {
         InitializeComponent();
+        AlertId = alert.Id;
         TitleText.Text = alert.Title;
         BodyText.Text = alert.Body;
         BodyText.Visibility = string.IsNullOrWhiteSpace(alert.Body) ? Visibility.Collapsed : Visibility.Visible;
@@ -40,6 +55,7 @@ public partial class NotificationWindow : Window
         ApplyKindStyle(alert);
 
         _displayDuration = TimeSpan.FromSeconds(Math.Max(2, durationSeconds));
+        _remainingDuration = _displayDuration;
         _dismissTimer = new DispatcherTimer
         {
             Interval = _displayDuration,
@@ -49,6 +65,86 @@ public partial class NotificationWindow : Window
             _dismissTimer.Stop();
             SlideOutAndClose();
         };
+
+        if (alert.Kind == AlertKind.EewWarning && !alert.IsCancelled && alert.Detail?.ArrivalTime is { } arrival)
+        {
+            StartCountdown(arrival);
+        }
+    }
+
+    /// <summary>
+    /// 主要動の到達予想をカウントダウンで出す。到達まで(＋少し)は通知を消さない。
+    /// 表示中に呼ばれた時(Wolfx の報のあとに P2P地震情報の到達時刻が届いた時)は、その場で足して出し直す。
+    /// </summary>
+    public void StartCountdown(DateTimeOffset arrival)
+    {
+        if (_isClosing || DateTimeOffset.Now - arrival > CountdownStale)
+        {
+            return;
+        }
+
+        var wasShown = IsVisible;
+        _arrival = arrival;
+        CountdownBorder.Visibility = Visibility.Visible;
+        CountdownAreaText.Text = $"到達予想 {arrival.ToLocalTime():HH:mm:ss}";
+        UpdateCountdown();
+
+        _countdownTimer?.Stop();
+        _countdownTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
+        _countdownTimer.Tick += (_, _) => UpdateCountdown();
+        _countdownTimer.Start();
+
+        // 到達して少したつまで出しておく(普段の表示時間より短くはしない)
+        var untilGone = arrival + KeepAfterArrival - DateTimeOffset.Now;
+        var display = untilGone > _displayDuration ? untilGone : _displayDuration;
+        if (display > MaxCountdownDisplay) display = MaxCountdownDisplay;
+        _dismissTimer.Stop();
+        _dismissTimer.Interval = display;
+        _remainingDuration = display;
+
+        if (wasShown)
+        {
+            _dismissTimer.Start();
+            StartRemainingTimeAnimation();
+            UpdateLayout();
+            var (_, physicalHeight) = MeasurePhysicalSize();
+            PhysicalHeight = physicalHeight;
+            HeightChanged?.Invoke();
+            MoveToCurrentSlot();
+        }
+    }
+
+    /// <summary>高さが変わった(カウントダウンが足された)時。まわりの通知を並べ直すのに使う</summary>
+    public event Action? HeightChanged;
+
+    private void UpdateCountdown()
+    {
+        if (_arrival is not { } arrival) return;
+        var remaining = (arrival - DateTimeOffset.Now).TotalSeconds;
+        if (remaining > 0)
+        {
+            CountdownNumberText.Text = Math.Ceiling(remaining).ToString("0");
+            CountdownCaptionText.Text = "秒後に強い揺れ(推定)";
+        }
+        else
+        {
+            CountdownNumberText.Text = "0";
+            CountdownCaptionText.Text = "まもなく、または既に到達(推定)";
+            _countdownTimer?.Stop();
+        }
+    }
+
+    /// <summary>高さが変わった時、今の段の正しい位置へ動かす(下の角では上へ伸ばす)</summary>
+    private void MoveToCurrentSlot()
+    {
+        if (_currentScreen is null || _isClosing) return;
+        var (width, height) = MeasurePhysicalSize();
+        var (toX, toY) = ComputePosition(_currentScreen, _currentCorner, width, height, _currentStackOffset);
+        var hwnd = new WindowInteropHelper(this).Handle;
+        if (NativeMethods.TryGetWindowPosition(hwnd, out var x, out var y))
+        {
+            AnimateWindowFollow(x, y, toX, toY);
+        }
     }
 
     /// <summary>種類ごとにアイコンと色を変える(アプリ本体のカードと同じ見た目)</summary>
@@ -138,7 +234,7 @@ public partial class NotificationWindow : Window
         IconScale.BeginAnimation(ScaleTransform.ScaleXProperty, pop);
         IconScale.BeginAnimation(ScaleTransform.ScaleYProperty, pop);
 
-        scale.BeginAnimation(ScaleTransform.ScaleXProperty, new System.Windows.Media.Animation.DoubleAnimation(1, 0, _displayDuration)
+        scale.BeginAnimation(ScaleTransform.ScaleXProperty, new System.Windows.Media.Animation.DoubleAnimation(1, 0, _remainingDuration)
         {
             EasingFunction = null,
             FillBehavior = System.Windows.Media.Animation.FillBehavior.HoldEnd,
@@ -175,7 +271,7 @@ public partial class NotificationWindow : Window
     }
 
     /// <summary>
-    /// currentY += (targetY - currentY) * 0.2 の追従方式。
+    /// KoppeSenseの currentY += (targetY - currentY) * 0.2 と同じ追従方式。
     /// 固定時間で始点から補間せず、現在位置から毎フレーム残り距離の20%を進むため、
     /// 通知が続けて消えて目標位置が変わっても、不自然に止まったり跳ねたりしない。
     /// </summary>
@@ -228,7 +324,7 @@ public partial class NotificationWindow : Window
             {
                 // 入場はすばやく姿を見せて、所定位置へ柔らかく着地する。
                 MoveEasing.Enter => 1 - Math.Pow(1 - t, 3),
-                // currentY 追従に近い、最初にしっかり動いて柔らかく止まる曲線。
+                // KoppeSenseのcurrentY追従に近い、最初にしっかり動いて柔らかく止まる曲線。
                 MoveEasing.Reflow => 1 - Math.Pow(1 - t, 3),
                 // ネイティブウィンドウでは3次ease-inの最初の数フレームが1px未満になり、
                 // 静止しているように見える。開始直後から動き、終端も滑らかなsmoothstepを使う。
@@ -307,6 +403,7 @@ public partial class NotificationWindow : Window
     {
         _dismissTimer.Stop();
         _moveTimer?.Stop();
+        _countdownTimer?.Stop();
         base.OnClosed(e);
     }
 }

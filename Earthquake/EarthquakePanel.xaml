@@ -24,7 +24,7 @@
     <DockPanel>
                 <StackPanel DockPanel.Dock="Top" Margin="0,0,0,12">
                     <TextBlock Text="地震情報" FontSize="28" FontWeight="SemiBold"/>
-                    <TextBlock Text="データ: P2P地震情報 · 遅れたり届かないことがあります。スマホの緊急速報もオンにしておいてください" Style="{StaticResource PageSubtitleStyle}"/>
+                    <TextBlock Text="データ: P2P地震情報、Wolfx Project ·遅れたり届かないことがあります。スマホの緊急速報もオンにしておいてください" Style="{StaticResource PageSubtitleStyle}"/>
                 </StackPanel>
 
                 <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,12">

@@ -43,6 +43,7 @@ public sealed class NotificationManager
             _active.Remove(window);
             Reflow(screen, corner);
         };
+        window.HeightChanged += () => Reflow(screen, corner);
 
         var offset = _active.Sum(w => w.PhysicalHeight + Gap);
         _active.Add(window);
@@ -50,6 +51,15 @@ public sealed class NotificationManager
 
         var repeatCount = alert.IsCritical ? CriticalRepeatCount : 1;
         NotificationSoundPlayer.PlayRepeated(_soundProvider(), _volumeProvider(), repeatCount);
+    }
+
+    /// <summary>表示中の緊急地震速報に、あとから分かった主要動の到達時刻を足してカウントダウンを出す</summary>
+    public void UpdateArrival(string alertId, DateTimeOffset arrival)
+    {
+        foreach (var window in _active.Where(w => w.AlertId == alertId).ToList())
+        {
+            window.StartCountdown(arrival);
+        }
     }
 
     private void Reflow(System.Windows.Forms.Screen screen, NotificationCorner corner)

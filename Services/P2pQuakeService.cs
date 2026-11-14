@@ -346,7 +346,8 @@ public sealed class P2pQuakeService
         }
 
         var maxScale = eq.TryGetProperty("maxScale", out var msEl) ? msEl.GetInt32() : -1;
-        var minScale = ScaleThreshold.GetValueOrDefault(_config.MinEarthquakeIntensity, 30);
+        // «通知しない» の時は、どの震度でも通知しない(一覧には入れる)
+        var minScale = _config.MinEarthquakeIntensity == "none" ? int.MaxValue : ScaleThreshold.GetValueOrDefault(_config.MinEarthquakeIntensity, 30);
         // 設定した最小震度未満でも、履歴・地震タブへの記録は行い、通知(音・トースト・自動切替)のみ抑制する。
         var shouldNotify = maxScale >= minScale;
 

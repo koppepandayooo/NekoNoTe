@@ -50,9 +50,14 @@ public partial class RobloxPanel : System.Windows.Controls.UserControl
         InitializeComponent();
         PlaceBox.Text = _settings.Place;
         JobBox.Text = _settings.Job;
-        MultiSwitch.IsChecked = RobloxMultiInstance.Enabled;
+        MultiSwitch.IsChecked = RobloxMultiInstance.Enabled || RobloxMultiInstance.Pending;
         _loading = false;
         UpdateMultiText();
+        RobloxMultiInstance.Changed += () => Dispatcher.BeginInvoke(() =>
+        {
+            MultiSwitch.IsChecked = RobloxMultiInstance.Enabled || RobloxMultiInstance.Pending;
+            UpdateMultiText();
+        });
         UpdatePlaceInfo();
         RobloxAccounts.Changed += () => Dispatcher.BeginInvoke(Render);
         Loaded += async (_, _) => { Render(); await LoadHeadshotsAsync(); };
@@ -61,7 +66,8 @@ public partial class RobloxPanel : System.Windows.Controls.UserControl
     /// <summary>アプリの起動時に、前回オンにしていたら多重起動をオンにする</summary>
     public static void ApplyStartupSettings()
     {
-        if (RobloxSettings.Load().MultiInstance) RobloxMultiInstance.Enable();
+        // Roblox が先に起動していたら、閉じた時にオンにする
+        if (RobloxSettings.Load().MultiInstance && !RobloxMultiInstance.Enable()) RobloxMultiInstance.EnableWhenRobloxCloses();
     }
 
     // ---------- 一覧 ----------
@@ -306,12 +312,12 @@ public partial class RobloxPanel : System.Windows.Controls.UserControl
         {
             if (!RobloxMultiInstance.Enable())
             {
-                MultiSwitch.IsChecked = false;
-                ShowMessage("Roblox が起動しているのでオンにできませんでした。Roblox を全部閉じてからオンにしてください。", bad: true);
+                RobloxMultiInstance.EnableWhenRobloxCloses();
+                ShowMessage("Roblox が起動しているので、今はまだオンにできません。Roblox を全部閉じたら自動でオンになります。");
             }
         }
         else RobloxMultiInstance.Disable();
-        _settings.MultiInstance = RobloxMultiInstance.Enabled;
+        _settings.MultiInstance = RobloxMultiInstance.Enabled || RobloxMultiInstance.Pending;
         _settings.Save();
         UpdateMultiText();
     }
@@ -320,7 +326,9 @@ public partial class RobloxPanel : System.Windows.Controls.UserControl
     {
         MultiText.Text = RobloxMultiInstance.Enabled
             ? "オン: Roblox を何個でも同時に起動できます。NekoNoTe を閉じる(タスクトレイからも終了する)とオフに戻ります。"
-            : "オフ: Roblox は1個だけ。オンにする時は、先に Roblox を全部閉じてください。";
+            : RobloxMultiInstance.Pending
+                ? "待っています: Roblox が起動しているので、全部閉じたら自動でオンになります。"
+                : "オフ: Roblox は1個だけ。";
     }
 
     // ---------- メッセージ ----------

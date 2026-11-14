@@ -95,6 +95,32 @@ public sealed class AlertInfo
     [JsonIgnore]
     public string? CancelsAlertId { get; init; }
 
+    /// <summary>主要動の到達予測時刻だけを差し替えた複製を返す(Wolfx の報に P2P地震情報の到達時刻を足す時に使う)。</summary>
+    public AlertInfo WithArrivalTime(DateTimeOffset arrivalTime) => new()
+    {
+        Id = Id,
+        Kind = Kind,
+        Title = Title,
+        Body = Body,
+        ReportedAt = ReportedAt,
+        Detail = new EarthquakeDetail
+        {
+            HypocenterName = Detail?.HypocenterName,
+            Depth = Detail?.Depth,
+            Magnitude = Detail?.Magnitude,
+            Latitude = Detail?.Latitude,
+            Longitude = Detail?.Longitude,
+            DomesticTsunami = Detail?.DomesticTsunami,
+            Points = Detail?.Points ?? Array.Empty<EarthquakeIntensityPoint>(),
+            OriginTime = Detail?.OriginTime,
+            ArrivalTime = arrivalTime,
+        },
+        IsCritical = IsCritical,
+        ShouldNotify = ShouldNotify,
+        AreaCode = AreaCode,
+        IsCancelled = IsCancelled,
+    };
+
     /// <summary>取消済みとして、タイトルに「【取消】」を付けた複製を返す。</summary>
     public AlertInfo AsCancelled() => new()
     {

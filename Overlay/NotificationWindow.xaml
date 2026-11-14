@@ -62,6 +62,18 @@
                         <TextBlock x:Name="TitleText" FontSize="14.5" FontWeight="Bold" Foreground="#FFFFFF" TextWrapping="Wrap" Margin="0,1,0,0"/>
                         <TextBlock x:Name="BodyText" FontSize="12" Foreground="#C5FFFFFF" TextWrapping="Wrap" Margin="0,2,0,0" LineHeight="16"/>
 
+                        <!-- 緊急地震速報: 主要動の到達までのカウントダウン -->
+                        <Border x:Name="CountdownBorder" Visibility="Collapsed" Margin="0,8,0,0" Padding="10,4,10,6" CornerRadius="10"
+                                Background="#33DC2626" BorderBrush="#99DC2626" BorderThickness="1">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock x:Name="CountdownNumberText" FontSize="30" FontWeight="Black" Foreground="White" VerticalAlignment="Center"/>
+                                <StackPanel VerticalAlignment="Center" Margin="10,0,0,0">
+                                    <TextBlock x:Name="CountdownCaptionText" FontSize="12.5" FontWeight="SemiBold" Foreground="White"/>
+                                    <TextBlock x:Name="CountdownAreaText" FontSize="11" Foreground="#FFE5B4B4"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
                         <!-- 残り時間 -->
                         <Border Height="2.5" CornerRadius="1.25" Background="#1AFFFFFF" Margin="0,8,0,0" ClipToBounds="True">
                             <Border x:Name="RemainingTimeBar" CornerRadius="1.25" HorizontalAlignment="Stretch" RenderTransformOrigin="0,0.5"

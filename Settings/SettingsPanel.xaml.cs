@@ -26,6 +26,8 @@ public partial class SettingsPanel : System.Windows.Controls.UserControl
     {
         new("震度1以上", "1"), new("震度2以上", "2"), new("震度3以上", "3"), new("震度4以上", "4"),
         new("震度5弱以上", "5-"), new("震度5強以上", "5+"), new("震度6弱以上", "6-"), new("震度6強以上", "6+"), new("震度7", "7"),
+        // 地震情報と緊急地震速報の予報は通知しない(緊急地震速報の警報だけ通知する)
+        new("通知しない(緊急地震速報の警報だけ)", "none"),
     };
 
     private static readonly OptionItem[] Corners =
@@ -82,6 +84,7 @@ public partial class SettingsPanel : System.Windows.Controls.UserControl
         UpdateBackgroundPathText();
 
         SourceCombo.SelectedIndex = S.QuakeSource switch { "Direct" => 1, "Off" => 2, _ => 0 };
+        WolfxToggle.IsChecked = S.UseWolfxEew;
         IntensityCombo.ItemsSource = Intensities;
         IntensityCombo.SelectedItem = Intensities.FirstOrDefault(o => o.Key == S.MinEarthquakeIntensity) ?? Intensities[2];
         AreaCombo.Items.Add("(設定しない)");
@@ -154,6 +157,14 @@ public partial class SettingsPanel : System.Windows.Controls.UserControl
         S.Save();
         ShowSavedFeedback();
         CurrentApp.RestartQuakeService();
+    }
+
+    private void Wolfx_Click(object sender, RoutedEventArgs e)
+    {
+        S.UseWolfxEew = WolfxToggle.IsChecked == true;
+        S.Save();
+        ShowSavedFeedback();
+        CurrentApp.ApplyWolfxSetting();
     }
 
     private void Startup_Click(object sender, RoutedEventArgs e)

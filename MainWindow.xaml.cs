@@ -16,6 +16,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
             (HomeNavButton, HomePanel),
             (EarthquakeNavButton, EarthquakePanel),
             (RobloxNavButton, RobloxPanel),
+            (LanShareNavButton, LanSharePanel),
             (UpdateNavButton, UpdatePanel),
             (SettingsNavButton, SettingsPanel),
         };
@@ -35,6 +36,10 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         HomePanel.OpenEarthquakeRequested += () => NavButton_Click(EarthquakeNavButton, new RoutedEventArgs());
         HomePanel.OpenRobloxRequested += () => NavButton_Click(RobloxNavButton, new RoutedEventArgs());
         HomePanel.OpenSettingsRequested += () => NavButton_Click(SettingsNavButton, new RoutedEventArgs());
+        void UpdateLanShareBadge() => LanShareNavActivity.Visibility =
+            NekoNoTe.LanShare.LanShareService.Instance.Enabled ? Visibility.Visible : Visibility.Collapsed;
+        NekoNoTe.LanShare.LanShareService.Instance.StateChanged += () => Dispatcher.BeginInvoke(UpdateLanShareBadge);
+        UpdateLanShareBadge();
         UpdatePanel.UpdateAvailableChanged += available =>
             UpdateNavActivity.Visibility = available ? Visibility.Visible : Visibility.Collapsed;
         Loaded += async (_, _) =>
@@ -120,6 +125,10 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         EarthquakePanel.SelectAlert(alert);
         if (IsVisible) NavButton_Click(EarthquakeNavButton, new RoutedEventArgs());
     }
+
+    /// <summary>履歴の項目が置き換わった時、それを選んでいたら新しい方を選び直す(詳細・カウントダウンを更新する)</summary>
+    public void ReplaceAlertSelection(NekoNoTe.Models.AlertInfo oldAlert, NekoNoTe.Models.AlertInfo newAlert) =>
+        EarthquakePanel.ReplaceSelection(oldAlert, newAlert);
 
     private void NavButton_Click(object sender, RoutedEventArgs e)
     {

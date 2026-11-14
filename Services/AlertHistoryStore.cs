@@ -65,6 +65,27 @@ public sealed class AlertHistoryStore
         return cancelled;
     }
 
+    /// <summary>指定Idの項目を置き換える。update が null を返したら何もしない。置き換えた時は (前, 後) を返す</summary>
+    public (AlertInfo Old, AlertInfo New)? Update(string alertId, Func<AlertInfo, AlertInfo?> update)
+    {
+        var index = Items.ToList().FindIndex(a => a.Id == alertId);
+        if (index < 0) return null;
+        var old = Items[index];
+        if (update(old) is not { } updated) return null;
+        Items[index] = updated;
+        SaveToDisk();
+        return (old, updated);
+    }
+
+    /// <summary>指定Idの項目を消す</summary>
+    public void Remove(string alertId)
+    {
+        var index = Items.ToList().FindIndex(a => a.Id == alertId);
+        if (index < 0) return;
+        Items.RemoveAt(index);
+        SaveToDisk();
+    }
+
     private List<AlertInfo> LoadFromDisk()
     {
         try

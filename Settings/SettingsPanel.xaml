@@ -156,6 +156,14 @@
                                        Text="自動にすると、同じネットワークの中の 1 台だけが受信して、他の PC に配ります。"/>
                             <TextBlock x:Name="FirewallText" Foreground="{StaticResource ActivityWarningBrush}" FontSize="12" Margin="0,-8,0,14" TextWrapping="Wrap" Visibility="Collapsed"
                                        Text="Windows のファイアウォールでブロックされているので、他の PC には共有できません(このPCでの受信はできます)。"/>
+                            <DockPanel Margin="0,0,0,14">
+                                <ui:ToggleSwitch x:Name="WolfxToggle" DockPanel.Dock="Right" Click="Wolfx_Click"/>
+                                <StackPanel>
+                                    <TextBlock Text="緊急地震速報の予報も受け取る" FontSize="13.5"/>
+                                    <TextBlock Style="{StaticResource NoteTextStyle}" Margin="0,2,0,0" TextWrapping="Wrap"
+                                               Text="P2P地震情報(警報だけ)に加えて、Wolfx Project からも受け取ります。予報は下の最小震度以上の時だけ通知します。"/>
+                                </StackPanel>
+                            </DockPanel>
                             <TextBlock Text="地震を通知する最小震度" Style="{StaticResource FieldLabelStyle}"/>
                             <ComboBox x:Name="IntensityCombo" DisplayMemberPath="Name" Margin="0,0,0,14" SelectionChanged="Setting_SelectionChanged"/>
                             <TextBlock Text="住んでいる都道府県(緊急地震速報の到達予想に使います)" Style="{StaticResource FieldLabelStyle}"/>
@@ -189,7 +197,7 @@
                             </StackPanel>
                             <TextBlock x:Name="VersionText" FontSize="13.5" FontWeight="SemiBold"/>
                             <TextBlock Style="{StaticResource NoteTextStyle}" Margin="0,4,0,0" TextWrapping="Wrap"
-                                       Text="GPL-3.0 で公開しています。Roblox の機能は Roblox Account Manager(作者 ic3w0lf22)を元にしています。地震のデータは P2P地震情報のものです。地図は「国土数値情報(行政区域データ)」(国土交通省、CC BY 4.0)を加工して作成しています。"/>
+                                       Text="GPL-3.0 で公開しています。Roblox の機能は Roblox Account Manager(作者 ic3w0lf22)を元にしています。地震のデータは P2P地震情報と Wolfx Project(緊急地震速報、非公式)のものです。地図は「国土数値情報(行政区域データ)」(国土交通省、CC BY 4.0)を加工して作成しています。"/>
                             <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
                                 <Button Height="34" Padding="12,0" Click="GitHub_Click">
                                     <StackPanel Orientation="Horizontal">

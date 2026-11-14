@@ -8,6 +8,7 @@
         xmlns:earthquake="clr-namespace:NekoNoTe.Earthquake"
         xmlns:updates="clr-namespace:NekoNoTe.Updates"
         xmlns:settings="clr-namespace:NekoNoTe.Settings"
+        xmlns:lanshare="clr-namespace:NekoNoTe.LanShare"
         Title="NekoNoTe"
         Width="1536" Height="864"
         MinWidth="860" MinHeight="560"
@@ -101,6 +102,21 @@
                                     <TextBlock Grid.Column="1" Text="Roblox" FontSize="13.5" VerticalAlignment="Center"/>
                                 </Grid>
                             </ToggleButton>
+
+                            <TextBlock Text="ツール" Style="{StaticResource SidebarSectionStyle}"/>
+                            <ToggleButton x:Name="LanShareNavButton" Style="{StaticResource NavButtonStyle}" Click="NavButton_Click">
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="30"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                    <ui:SymbolIcon Symbol="Share24" FontSize="18" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="LAN 共有" FontSize="13.5" VerticalAlignment="Center"/>
+                                    <Border x:Name="LanShareNavActivity" Grid.Column="2" HorizontalAlignment="Right" CornerRadius="8" Padding="7,1"
+                                            Background="#264CD964" VerticalAlignment="Center" Visibility="Collapsed">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse Width="6" Height="6" Fill="#4CD964" VerticalAlignment="Center"/>
+                                            <TextBlock Text="オン" FontSize="10" Foreground="#4CD964" Margin="5,0,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </ToggleButton>
                         </StackPanel>
                     </ScrollViewer>
                 </DockPanel>
@@ -112,6 +128,7 @@
                     <earthquake:EarthquakePanel x:Name="EarthquakePanel" Visibility="Collapsed"/>
                     <home:HomePanel x:Name="HomePanel"/>
                     <roblox:RobloxPanel x:Name="RobloxPanel" Visibility="Collapsed"/>
+                    <lanshare:LanSharePanel x:Name="LanSharePanel" Visibility="Collapsed"/>
                     <updates:UpdatePanel x:Name="UpdatePanel" Visibility="Collapsed"/>
                     <settings:SettingsPanel x:Name="SettingsPanel" Visibility="Collapsed"/>
                 </Grid>

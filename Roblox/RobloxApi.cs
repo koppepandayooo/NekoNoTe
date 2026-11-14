@@ -135,6 +135,8 @@ public static class RobloxMultiInstance
     private static Mutex? _mutex;
 
     public static bool Enabled => _mutex != null;
+    /// <summary>オン・オフ・待っている、が変わった時</summary>
+    public static event Action? Changed;
 
     /// <summary>オンにする。Roblox がもう起動している時は印を取れないので false</summary>
     public static bool Enable()
@@ -149,17 +151,50 @@ public static class RobloxMultiInstance
                 return false;
             }
             _mutex = m;
+            Changed?.Invoke();
             return true;
         }
         catch { return false; }
     }
 
+    private static System.Windows.Threading.DispatcherTimer? _waitTimer;
+
+    /// <summary>Roblox が閉じるのを待っていて、閉じたら自動でオンにするところか</summary>
+    public static bool Pending => _waitTimer != null;
+
+    /// <summary>
+    /// Roblox が起動していてオンにできない時に、閉じたら自動でオンにする(2 秒ごとに試す)。
+    /// 印(Mutex)は取ったスレッドのものになるので、必ず画面のスレッドから呼ぶ。
+    /// </summary>
+    public static void EnableWhenRobloxCloses()
+    {
+        if (_mutex != null || _waitTimer != null) return;
+        _waitTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+        _waitTimer.Tick += (_, _) =>
+        {
+            if (!Enable()) return;
+            StopWaiting();
+        };
+        _waitTimer.Start();
+        Changed?.Invoke();
+    }
+
+    private static void StopWaiting()
+    {
+        if (_waitTimer == null) return;
+        _waitTimer.Stop();
+        _waitTimer = null;
+        Changed?.Invoke();
+    }
+
     public static void Disable()
     {
+        StopWaiting();
         if (_mutex == null) return;
         try { _mutex.ReleaseMutex(); } catch { }
         _mutex.Dispose();
         _mutex = null;
+        Changed?.Invoke();
     }
 
     public static bool RobloxRunning() => Process.GetProcessesByName("RobloxPlayerBeta").Length > 0;

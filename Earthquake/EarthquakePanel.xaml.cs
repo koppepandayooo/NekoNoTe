@@ -50,6 +50,11 @@ public partial class EarthquakePanel : System.Windows.Controls.UserControl
 
     public void SelectAlert(AlertInfo alert) => EarthquakeList.SelectedItem = alert;
 
+    public void ReplaceSelection(AlertInfo oldAlert, AlertInfo newAlert)
+    {
+        if (ReferenceEquals(EarthquakeList.SelectedItem, oldAlert)) EarthquakeList.SelectedItem = newAlert;
+    }
+
     /// <summary>履歴に入れず、詳細だけにテストのデータを出す</summary>
     public void ShowTestAlert(AlertInfo alert)
     {

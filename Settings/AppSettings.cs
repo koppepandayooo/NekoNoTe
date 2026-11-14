@@ -21,6 +21,8 @@ public sealed class AppSettings
     /// <summary>共有のためのネットワークの確認(ファイアウォール)を初回に済ませた</summary>
     public bool NetworkPrimed { get; set; }
     public string MinEarthquakeIntensity { get; set; } = "3";
+    /// <summary>Wolfx Project からも緊急地震速報(予報を含む)を受け取る。PC ごとに直接つなぐ</summary>
+    public bool UseWolfxEew { get; set; } = true;
     /// <summary>緊急地震速報のカウントダウンに使う地域(都道府県)</summary>
     public string AreaName { get; set; } = "";
     public double NotificationVolume { get; set; } = 0.5;
