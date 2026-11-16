@@ -2,6 +2,12 @@
 
 ゲーマー向けの便利ツールをまとめた Windows アプリです。
 
+![ホーム](docs/screenshots/home.png)
+
+| 地震 | Roblox |
+| --- | --- |
+| ![地震タブ: 地震情報の一覧と震度分布の地図](docs/screenshots/earthquake.png) | ![Roblox タブ: アカウントの一覧と多重起動](docs/screenshots/roblox.png) |
+
 ## 機能
 
 ### ホーム
