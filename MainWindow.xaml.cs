@@ -16,6 +16,7 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
             (HomeNavButton, HomePanel),
             (EarthquakeNavButton, EarthquakePanel),
             (RobloxNavButton, RobloxPanel),
+            (RecorderNavButton, RecorderPanel),
             (LanShareNavButton, LanSharePanel),
             (UpdateNavButton, UpdatePanel),
             (SettingsNavButton, SettingsPanel),
@@ -40,6 +41,19 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
             NekoNoTe.LanShare.LanShareService.Instance.Enabled ? Visibility.Visible : Visibility.Collapsed;
         NekoNoTe.LanShare.LanShareService.Instance.StateChanged += () => Dispatcher.BeginInvoke(UpdateLanShareBadge);
         UpdateLanShareBadge();
+
+        // 録音: オンの間は «オン»、録音中は赤で «録音中»
+        NekoNoTe.Recorder.RecorderService.StateChanged += () => Dispatcher.BeginInvoke(() =>
+        {
+            var r = NekoNoTe.Recorder.RecorderService.Instance;
+            var text = r == null ? null : r.IsRecording ? "録音中" : r.Settings.Enabled ? "オン" : null;
+            RecorderNavActivity.Visibility = text != null ? Visibility.Visible : Visibility.Collapsed;
+            if (text == null) return;
+            var color = r!.IsRecording ? System.Windows.Media.Color.FromRgb(0xFF, 0x6B, 0x76) : System.Windows.Media.Color.FromRgb(0x4C, 0xD9, 0x64);
+            RecorderNavActivity.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x26, color.R, color.G, color.B));
+            RecorderNavDot.Fill = RecorderNavText.Foreground = new System.Windows.Media.SolidColorBrush(color);
+            RecorderNavText.Text = text;
+        });
         UpdatePanel.UpdateAvailableChanged += available =>
             UpdateNavActivity.Visibility = available ? Visibility.Visible : Visibility.Collapsed;
         Loaded += async (_, _) =>

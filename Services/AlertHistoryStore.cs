@@ -26,6 +26,12 @@ public sealed class AlertHistoryStore
         {
             Items.Add(item);
         }
+
+        // 前に入った «同じ地震の予報と地震情報» の重なりも片付ける
+        foreach (var quake in Items.Where(a => a.Kind == AlertKind.Earthquake).ToList())
+        {
+            RemoveForecastsFor(quake);
+        }
     }
 
     public void Add(AlertInfo alert)
@@ -75,6 +81,30 @@ public sealed class AlertHistoryStore
         Items[index] = updated;
         SaveToDisk();
         return (old, updated);
+    }
+
+    /// <summary>
+    /// 地震情報が届いた時に、同じ地震の緊急地震速報(予報)を消す(同じ地震が 2 つ並ばないように)。
+    /// 地震情報の時刻は分までしかないので、予報の発生時刻が «その分の 30 秒前〜1 分半後» で、
+    /// 震源の名前が同じか、震央が 1 度以内なら同じ地震とみなす。警報は大事な記録なので残す。
+    /// </summary>
+    public void RemoveForecastsFor(AlertInfo quake)
+    {
+        if (quake.Kind != AlertKind.Earthquake) return;
+        var removed = false;
+        foreach (var f in Items.Where(a => a.Id.StartsWith("eew-forecast:", StringComparison.Ordinal)).ToList())
+        {
+            if (f.Detail?.OriginTime is not { } origin) continue;
+            var diff = (origin - quake.ReportedAt).TotalSeconds;
+            if (diff is < -30 or > 90) continue;
+            var sameName = !string.IsNullOrEmpty(f.Detail.HypocenterName) && f.Detail.HypocenterName == quake.Detail?.HypocenterName;
+            var near = f.Detail.Latitude is { } la1 && f.Detail.Longitude is { } lo1 && quake.Detail?.Latitude is { } la2 && quake.Detail?.Longitude is { } lo2
+                       && Math.Abs(la1 - la2) <= 1 && Math.Abs(lo1 - lo2) <= 1;
+            if (!sameName && !near) continue;
+            Items.Remove(f);
+            removed = true;
+        }
+        if (removed) SaveToDisk();
     }
 
     /// <summary>指定Idの項目を消す</summary>

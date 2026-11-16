@@ -123,6 +123,7 @@ public partial class App : System.Windows.Application
         IsExiting = true;
         _quake?.Stop();
         _wolfx?.Stop();
+        NekoNoTe.Recorder.RecorderService.Instance?.Dispose();   // 録音中のファイルを閉じて、キーフックを外す
         if (_tray != null)
         {
             _tray.Visible = false;
@@ -200,6 +201,9 @@ public partial class App : System.Windows.Application
         // 警報が出たら、同じ地震の予報は一覧から外す(警報に置き換わる)
         if (alert.Id.StartsWith("eew:", StringComparison.Ordinal))
             _history.Remove("eew-forecast:" + alert.Id["eew:".Length..]);
+
+        // 地震情報が届いたら、同じ地震の予報は一覧から外す(揺れた後の確かな情報に置き換わる)
+        _history.RemoveForecastsFor(alert);
 
         _history.Add(alert);
 

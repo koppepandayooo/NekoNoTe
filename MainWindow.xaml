@@ -9,6 +9,7 @@
         xmlns:updates="clr-namespace:NekoNoTe.Updates"
         xmlns:settings="clr-namespace:NekoNoTe.Settings"
         xmlns:lanshare="clr-namespace:NekoNoTe.LanShare"
+        xmlns:recorder="clr-namespace:NekoNoTe.Recorder"
         Title="NekoNoTe"
         Width="1536" Height="864"
         MinWidth="860" MinHeight="560"
@@ -104,6 +105,19 @@
                             </ToggleButton>
 
                             <TextBlock Text="ツール" Style="{StaticResource SidebarSectionStyle}"/>
+                            <ToggleButton x:Name="RecorderNavButton" Style="{StaticResource NavButtonStyle}" Click="NavButton_Click">
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="30"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                    <ui:SymbolIcon Symbol="Record24" FontSize="18" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="録音" FontSize="13.5" VerticalAlignment="Center"/>
+                                    <Border x:Name="RecorderNavActivity" Grid.Column="2" HorizontalAlignment="Right" CornerRadius="8" Padding="7,1"
+                                            VerticalAlignment="Center" Visibility="Collapsed">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse x:Name="RecorderNavDot" Width="6" Height="6" VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="RecorderNavText" FontSize="10" Margin="5,0,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </ToggleButton>
                             <ToggleButton x:Name="LanShareNavButton" Style="{StaticResource NavButtonStyle}" Click="NavButton_Click">
                                 <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="30"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                     <ui:SymbolIcon Symbol="Share24" FontSize="18" HorizontalAlignment="Left" VerticalAlignment="Center"/>
@@ -129,6 +143,7 @@
                     <home:HomePanel x:Name="HomePanel"/>
                     <roblox:RobloxPanel x:Name="RobloxPanel" Visibility="Collapsed"/>
                     <lanshare:LanSharePanel x:Name="LanSharePanel" Visibility="Collapsed"/>
+                    <recorder:RecorderPanel x:Name="RecorderPanel" Visibility="Collapsed"/>
                     <updates:UpdatePanel x:Name="UpdatePanel" Visibility="Collapsed"/>
                     <settings:SettingsPanel x:Name="SettingsPanel" Visibility="Collapsed"/>
                 </Grid>
