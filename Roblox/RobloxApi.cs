@@ -69,6 +69,31 @@ public static class RobloxApi
     }
 
     /// <summary>起動に使う一回きりの券(auth ticket)をもらう。CSRF トークンを先にもらってから頼む</summary>
+    /// <summary>今のユーザー名と表示名(まとめて1回で聞く。Cookie は使わない)。Roblox で名前を変えた時に追いつくため</summary>
+    public static async Task<Dictionary<long, (string Name, string DisplayName)>> NamesAsync(IEnumerable<long> ids)
+    {
+        var map = new Dictionary<long, (string, string)>();
+        var list = ids.Distinct().ToList();
+        if (list.Count == 0) return map;
+        try
+        {
+            var body = new JsonObject { ["userIds"] = new JsonArray(list.Select(i => (JsonNode)JsonValue.Create(i)).ToArray()), ["excludeBannedUsers"] = false };
+            using var content = new StringContent(body.ToJsonString(), System.Text.Encoding.UTF8, "application/json");
+            using var res = await Http.PostAsync("https://users.roblox.com/v1/users", content);
+            if (!res.IsSuccessStatusCode) return map;
+            var j = JsonNode.Parse(await res.Content.ReadAsStringAsync());
+            foreach (var d in j?["data"]?.AsArray() ?? new JsonArray())
+            {
+                var id = d?["id"]?.GetValue<long>() ?? 0;
+                var name = d?["name"]?.GetValue<string>() ?? "";
+                var display = d?["displayName"]?.GetValue<string>() ?? "";
+                if (id != 0 && name != "") map[id] = (name, display == "" ? name : display);
+            }
+        }
+        catch { }
+        return map;
+    }
+
     private static async Task<string> AuthTicketAsync(string cookie)
     {
         const string url = "https://auth.roblox.com/v1/authentication-ticket/";

@@ -60,7 +60,7 @@ public partial class RobloxPanel : System.Windows.Controls.UserControl
         });
         UpdatePlaceInfo();
         RobloxAccounts.Changed += () => Dispatcher.BeginInvoke(Render);
-        Loaded += async (_, _) => { Render(); await LoadHeadshotsAsync(); };
+        Loaded += async (_, _) => { Render(); await RefreshNamesAsync(); await LoadHeadshotsAsync(); };
     }
 
     /// <summary>アプリの起動時に、前回オンにしていたら多重起動をオンにする</summary>
@@ -153,6 +153,24 @@ public partial class RobloxPanel : System.Windows.Controls.UserControl
             CornerRadius = new CornerRadius(12), Padding = new Thickness(10), Margin = new Thickness(0, 0, 0, 8),
             Background = new SolidColorBrush(WpfColor.FromArgb(0x0F, 0xFF, 0xFF, 0xFF)), Child = dock,
         };
+    }
+
+    /// <summary>Roblox で名前を変えていたら、保存している名前を新しくする</summary>
+    private async Task RefreshNamesAsync()
+    {
+        var items = RobloxAccounts.Items.ToList();
+        if (items.Count == 0) return;
+        var map = await RobloxApi.NamesAsync(items.Select(a => a.UserId));
+        var changed = false;
+        foreach (var a in items)
+        {
+            if (!map.TryGetValue(a.UserId, out var n)) continue;
+            if (a.Name == n.Name && a.DisplayName == n.DisplayName) continue;
+            a.Name = n.Name;
+            a.DisplayName = n.DisplayName;
+            changed = true;
+        }
+        if (changed) { RobloxAccounts.Save(); Render(); }
     }
 
     private async Task LoadHeadshotsAsync()

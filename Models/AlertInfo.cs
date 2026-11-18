@@ -51,7 +51,7 @@ public sealed class AlertInfo
             : Title;
     /// <summary>
     /// 一覧のカード用の見出し。上にラベル(«緊急地震速報» など)を出すので、同じ言葉を頭から外す。
-    /// 例: «緊急地震速報(警報) 最大震度5弱» → «警報 · 最大震度5弱»
+    /// 例: «緊急地震速報(警報) 最大震度5弱» → «最大震度5弱»(予報・警報はラベルの方に出す)
     /// </summary>
     [JsonIgnore]
     public string ListSummaryLabel
@@ -62,16 +62,22 @@ public sealed class AlertInfo
             if (Kind == AlertKind.EewWarning && t.StartsWith("緊急地震速報", StringComparison.Ordinal))
             {
                 t = t["緊急地震速報".Length..].Trim();
-                foreach (var (from, to) in new[] { ("(警報)", "警報 · "), ("（警報）", "警報 · "), ("(予報)", "予報 · "), ("（予報）", "予報 · ") })
-                    if (t.StartsWith(from, StringComparison.Ordinal)) { t = to + t[from.Length..].Trim(); break; }
+                // 予報・警報は上のラベルに出すので、ここでは外す
+                foreach (var from in new[] { "(警報)", "（警報）", "(予報)", "（予報）" })
+                    if (t.StartsWith(from, StringComparison.Ordinal)) { t = t[from.Length..].Trim(); break; }
             }
             return t.Length > 0 ? t : EarthquakeSummaryLabel;
         }
     }
+    /// <summary>緊急地震速報の予報(Wolfx から受け取ったもの)かどうか</summary>
+    [JsonIgnore]
+    public bool IsEewForecast => Kind == AlertKind.EewWarning && Id.StartsWith("eew-forecast:", StringComparison.Ordinal);
     [JsonIgnore]
     public string AlertKindLabel => Kind switch
     {
-        AlertKind.EewWarning => "緊急地震速報",
+        AlertKind.EewWarning when IsCancelled => "緊急地震速報(取り消し)",
+        AlertKind.EewWarning when IsEewForecast => "緊急地震速報(予報)",
+        AlertKind.EewWarning => "緊急地震速報(警報)",
         AlertKind.Tsunami => "津波",
         AlertKind.Schedule => "予定",
         _ => "地震",

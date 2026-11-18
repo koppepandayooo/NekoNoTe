@@ -152,7 +152,9 @@ public partial class NotificationWindow : Window
     {
         var (symbol, label, color) = alert.Kind switch
         {
-            AlertKind.EewWarning => (Wpf.Ui.Controls.SymbolRegular.Alert24, "緊急地震速報", System.Windows.Media.Color.FromRgb(0xFF, 0x5C, 0x5C)),
+            AlertKind.EewWarning => (Wpf.Ui.Controls.SymbolRegular.Alert24,
+                alert.IsEewForecast ? "緊急地震速報(予報)" : "緊急地震速報(警報)",
+System.Windows.Media.Color.FromRgb(0xFF, 0x5C, 0x5C)),
             AlertKind.Earthquake => (Wpf.Ui.Controls.SymbolRegular.Pulse24, "地震情報", System.Windows.Media.Color.FromRgb(0x60, 0xCD, 0xFF)),
             AlertKind.Tsunami => (Wpf.Ui.Controls.SymbolRegular.Water24, "津波情報", System.Windows.Media.Color.FromRgb(0x5C, 0x9D, 0xFF)),
             AlertKind.WarningAdvisory => (Wpf.Ui.Controls.SymbolRegular.Warning24, "気象警報・注意報", System.Windows.Media.Color.FromRgb(0xFF, 0xB0, 0x5C)),
@@ -162,7 +164,7 @@ public partial class NotificationWindow : Window
         if (alert.IsCancelled)
         {
             symbol = Wpf.Ui.Controls.SymbolRegular.DismissCircle24;
-            label += "(取り消し)";
+            label = alert.Kind == AlertKind.EewWarning ? "緊急地震速報(取り消し)" : label + "(取り消し)";
             color = System.Windows.Media.Color.FromRgb(0xB0, 0xB0, 0xB8);
         }
         else if (alert.IsCritical && alert.Kind != AlertKind.Schedule)
